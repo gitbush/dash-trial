@@ -1,0 +1,31 @@
+#bar-chart .x.axis text,
+#area-chart .x.axis text, 
+#row-chart  .tick text{
+    text-anchor: end !important;
+    transform: rotate(-45deg);
+    margin-right: 5px;
+}
+
+.axis {
+  font: 12px sans-serif;
+  
+}
+
+.info{
+    background-color: blue
+}
+
+.region:hover{
+    fill-opacity: 0.2;
+    cursor: pointer;
+    
+}
+
+.dc-chart g.region path {
+    stroke: white;
+    fill: #128c07;
+}
+
+.number-display{
+    font: bold 26px arial, sans-serif;
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		
+		
+		<title>National Rail Dashboard</title>
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<link rel="stylesheet" href="/static/css/styles.css" type="text/css" />
+		
+	</head>
+	
+	<body>
+		
+		<style>
+		/*overide d3.js axis styles (only works when inline styling*/
+		     path.line {
+		     fill: none;
+		     }
+		    .axis path,
+			.axis line{
+				 fill: none;
+				 stroke: #000;
+				 shape-rendering: crispEdges;
+				 stroke-width: 1px;
+			}
+			/*path {*/
+			/*	fill: #bbb;*/
+			/*}*/
+  		</style>
+  	<div class= "container">	
+  		<section class="row">
+  			<div class="col-xs-12 col-md-6">	
+				<h1>Choropleth Map</h1>
+				<div id="map"></div>
+			</div>
+			<div class="col-xs-12 col-md-6">
+				<div class="row">
+					<div class="col-xs-6">
+						<h1>Detached</h1>
+						<div id="detached-number" class= "number-display"></div>
+					</div>
+					<div class="col-xs-6">
+						<h1>Semi-Detached</h1>
+						<div id="semi-detached-number" class= "number-display"></div>
+					</div>
+					<div class="col-xs-6">
+						<h1>Terraced</h1>
+						<div id="terraced-number" class= "number-display"></div>
+					</div>
+					<div class="col-xs-6">
+						<h1>Flat</h1>
+						<div id="flat-number" class= "number-display"></div>
+					</div>
+				</div>	
+			</div>
+			<div class="col-xs-12">	
+				<h1>Area chart/series chart</h1>
+				<div id="area-chart"></div>
+			</div>
+			<div class="col-xs-12 col-md-6">	
+				<h1>Pie chart</h1>
+				<div id="pie-chart"></div>
+			</div>
+  			<div class="col-xs-12 col-md-6">
+				<h1>Row chart</h1>
+				<div id="row-chart"></div>
+			</div>
+  			<div class="col-xs-12 col-md-12">
+				<h1>Bar chart</h1>
+				<div id="bar-chart"></div>
+			</div>
+			<div class="table table-hover col-xs-12 col-md-6">	
+				<h1>Data table</h1>
+				<table class= " table table-hover" id="data-table"></table>
+			</div>
+		</section>
+		<section class="row">
+			
+		</section>
+		
+	</div>	
+	
+	<script type="text/javascript" src="static/js/d3.min.js"></script>
+	<script type="text/javascript" src="static/js/crossfilter.min.js"></script>
+	<script type="text/javascript" src="static/js/dc.min.js"></script>
+	<script type="text/javascript" src="static/js/queue.min.js"></script>
+	<!--<script type="text/javascript" src="static/js/main.js" ></script>-->
+	<script type="text/javascript" src="/static/js/charts.js" charset="utf-8" ></script>
+
+	
+	
+	
+	
+	
+	</body>
+</html>
