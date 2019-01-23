@@ -6,15 +6,6 @@ queue() // Javascript library for asynchronous loading.
 // All graphs will be inside this function  and rendered once csv is loaded
 function makeCharts(error, propertyData, geoData){ // "error" if the data doesn't load properly, "salaryData" is a variable where queue stores the csv data
     
-    function print_filter(filter) {
-    var f=eval(filter);
-    if (typeof(f.length) != "undefined") {}else{}
-    if (typeof(f.top) != "undefined") {f=f.top(Infinity);}else{}
-    if (typeof(f.dimension) != "undefined") {f=f.dimension(function(d) { return "";}).top(Infinity);}else{}
-    console.log(filter+"("+f.length+") = "+JSON.stringify(f).replace("[","[\n\t").replace(/}\,/g,"},\n\t").replace("]","\n]"));
-    }
-    
-
     propertyData.forEach(function(d){
         d.AveragePrice = +d.AveragePrice;
         d.DetachedPrice = +d.DetachedPrice;

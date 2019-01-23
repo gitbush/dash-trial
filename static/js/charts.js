@@ -21,6 +21,8 @@ function makeCharts(error, propertyData, geoData){ // "error" if the data doesn'
         d.SemiDetachedPrice = +d.SemiDetachedPrice;
         d.TerracedPrice = +d.TerracedPrice;
         d.FlatPrice = +d.FlatPrice;
+        d.NewPrice = +d.NewPrice;
+        d.OldPrice = +d.OldPrice;
     });
     
     
@@ -34,12 +36,16 @@ function makeCharts(error, propertyData, geoData){ // "error" if the data doesn'
     var HPIdata = crossfilter(propertyData);  // crossfilter of csv data
     
     
+    // global dimensions
+    var dateDim = HPIdata.dimension(dc.pluck("Date"));
+    
     // all charts
     choroMap(HPIdata, geoData);
     lineChart(HPIdata);
     allRowChart(HPIdata);
     dataTable(HPIdata);
-    pieChart(HPIdata);
+    // pieChart(HPIdata);
+    OldVsNEwSales (HPIdata, dateDim);
     
     
     avgPricePerTypeNumber(HPIdata);
@@ -118,27 +124,15 @@ function avgPricePerTypeNumber(HPIdata){
 }
 
 function lineChart(HPIdata){
-    
-    console.log(new Date("2018"));
-    
-    function print_filter(filter) {
-    var f=eval(filter);
-    if (typeof(f.length) != "undefined") {}else{}
-    if (typeof(f.top) != "undefined") {f=f.top(Infinity);}else{}
-    if (typeof(f.dimension) != "undefined") {f=f.dimension(function(d) { return "";}).top(Infinity);}else{}
-    console.log(filter+"("+f.length+") = "+JSON.stringify(f).replace("[","[\n\t").replace(/}\,/g,"},\n\t").replace("]","\n]"));
-    }
-    
-    
+
     var dateDim = HPIdata.dimension(function(d){ return d.Date});
 
-
-    var AvgPriceGroup = dateDim.group().reduce(
+    var OldSalesGroup = dateDim.group().reduce(
         
         // reduce add
         function(p, v){
             p.count++;
-            p.total += v.AveragePrice;
+            p.total += v.OldPrice;
             p.average = p.total/p.count;
             return p;
         },
@@ -151,7 +145,7 @@ function lineChart(HPIdata){
             p.total=0;
             p.avergage=0;
             } else {
-            p.total -= v.AveragePrice;
+            p.total -= v.OldPrice;
             p.average = p.total/p.count;
             }
             return p;
@@ -165,45 +159,108 @@ function lineChart(HPIdata){
         
     );
     
-
-
-    var lineChart = dc.lineChart("#area-chart")
+    var NewSalesGroup = dateDim.group().reduce(
+        
+        // reduce add
+        function(p, v){
+            p.count++;
+            p.total += v.NewPrice;
+            p.average = p.total/p.count;
+            return p;
+        },
+       
+        
+        //  reduce remove
+        function(p, v){
+            p.count--;
+            if (p.count==0){
+            p.total=0;
+            p.avergage=0;
+            } else {
+            p.total -= v.NewPrice;
+            p.average = p.total/p.count;
+            }
+            return p;
+        },
+        
+        // reduce initial
+        function(){
+            return {count:0, total:0, average:0};
+        }
+        
+        
+    );
+    
+    var compositeChart = dc.compositeChart("#area-chart")
     
     var minDate = dateDim.bottom(1)[0].Date;
     var maxDate = dateDim.top(1)[0].Date;
 
-    lineChart 
+    compositeChart 
         .width(null)
         .height(400)
         .margins({top: 10, right: 50, bottom: 80, left: 70})
         .dimension(dateDim)
-        .group(AvgPriceGroup)
-        .valueAccessor(function(d){return d.value.average;})
         .x(d3.time.scale().domain([minDate, maxDate]))
-        .y(d3.scale.linear().domain([250000,1000000]))
-        .elasticY(true)
-        // .renderArea(true)
+        .y(d3.scale.linear().domain([200000,550000]))
+        .yAxisLabel("Average price(£)")
+        .legend(dc.legend().x(200).y(20).itemHeight(13).gap(5))
+        .renderHorizontalGridLines(true)
         // .renderDataPoints(true)
-        .interpolate("basis")
-        .yAxisLabel("Average price(£)");
-        lineChart.yAxis().ticks(10);
+        .compose([
+            dc.lineChart(compositeChart)
+                .colors("green")
+                .group(OldSalesGroup, "Old Sales Price")
+                .valueAccessor(function(d){return d.value.average;}),
+            dc.lineChart(compositeChart)
+                .colors("red")
+                .group(NewSalesGroup, "New Build Sales Price")
+                .valueAccessor(function(d){return d.value.average;})
+
+            ])
+        .brushOn(false);
+       
+        // .interpolate("basis")
 }
 
-function pieChart(HPIdata){
+// function pieChart(HPIdata){
     
-    var SalesVolumedim = HPIdata.dimension(function(d){  return d.Date;});
+//     var SaleTypeDim = HPIdata.dimension(function(d){  return d.Date.getFullYear();});
     
-    // print_filter(SalesVolumedim);
-    var Volumegroup = SalesVolumedim.group().reduceSum(function(d){ return  d.OldSalesVolume, d.NewSalesVolume;});
+//     var Volumegroup = SalesVolumedim.group().reduceCount(function(d){ return  d.NewSalesVolume;});
     
-    dc.pieChart("#pie-chart")
-        .width(null)
-        .height(400)
-        .dimension(SalesVolumedim)
-        .group(Volumegroup);
+//     dc.pieChart("#pie-chart")
+//         .height(400)
+//         .radius(150)
+//         .dimension(SalesVolumedim)
+//         .group(Volumegroup);
 
+// }
+
+
+function OldVsNEwSales (HPIdata){
+    
+    var dateDim = HPIdata.dimension(function(d){ return d.Date;});
+    
+    var oldSales = dateDim.group().reduceSum(dc.pluck("OldSalesVolume"))
+    var newSales = dateDim.group().reduceSum(dc.pluck("NewSalesVolume"))
+    
+    var minDate = dateDim.bottom(1)[0].Date;
+    var maxDate = dateDim.top(1)[0].Date;
+    
+    var StackedChart = dc.barChart("#bar-chart")
+    
+    StackedChart
+        .width(1000)
+        .height(500)
+        .margins({top: 10, right: 50, bottom: 80, left: 50})
+        .dimension(dateDim)
+        .group(oldSales, "Old Sales")
+        .stack(newSales, "New Sales")
+        .x(d3.time.scale().domain([minDate, maxDate]))
+        .legend(dc.legend().x(60).y(20).itemHeight(13).gap(5))
+        
 }
-
 
 
 
