@@ -35,21 +35,27 @@ function makeCharts(error, propertyData, geoData){ // "error" if the data doesn'
     //   crossfilter Data
     var HPIdata = crossfilter(propertyData);  // crossfilter of csv data
     
-    
+ 
     // global dimensions
     var dateDim = HPIdata.dimension(dc.pluck("Date"));
     
+
+    
     // all charts
     choroMap(HPIdata, geoData);
+    
+    NumberDisplayPerType(HPIdata, "DetachedPrice", "#detached-number");
+    NumberDisplayPerType(HPIdata, "SemiDetachedPrice", "#semi-detached-number");
+    NumberDisplayPerType(HPIdata, "TerracedPrice", "#terraced-number");
+    NumberDisplayPerType(HPIdata, "FlatPrice", "#flat-number");
+    
     lineChart(HPIdata);
     allRowChart(HPIdata);
     dataTable(HPIdata);
-    // pieChart(HPIdata);
-    OldVsNEwSales (HPIdata, dateDim);
+    pieChart(HPIdata);
+    OldVsNEwSalesStacked(HPIdata);
     
     
-    avgPricePerTypeNumber(HPIdata);
-
     dc.renderAll(); // tells browser to render all graphs
 }
 
@@ -78,41 +84,57 @@ function choroMap(HPIdata, geoData){
         
 }
 
-function avgPricePerTypeNumber(HPIdata){
+function NumberDisplayPerType(HPIdata, type, element){
     
-    var avgTypePrice = HPIdata.groupAll().reduce(
+    var uk = d3.locale({
+        "decimal": ".",
+        "thousands": ",",
+        "grouping": [3],
+        "currency": ["£", ""],
+        "dateTime": "%a %b %e %X %Y",
+        "date": "%m/%d/%Y",
+        "time": "%H:%M:%S",
+        "periods": ["AM", "PM"],
+        "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "shortDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+        "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        "shortMonths": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    });
     
-         // reduce add
-        function(p, v){
-            p.count++;
-            p.total += v.DetachedPrice;
-            p.average = p.total/p.count;
-            return p;
-        },
-       
-        
-        //  reduce remove
-        function(p, v){
-            p.count--;
-            if (p.count==0){
-            p.total=0;
-            p.avergage=0;
-            } else {
-            p.total -= v.DetachedPrice;
-            p.average = p.total/p.count;
+
+    var avgPriceGroup = HPIdata.groupAll().reduce(
+    
+             // reduce add
+            function(p, v){
+                p.count++;
+                p.total += v[type];
+                p.average = p.total/p.count;
+                return p;
+            },
+            
+            //  reduce remove
+            function(p, v){
+                p.count--;
+                if (p.count==0){
+                p.total=0;
+                p.average=0;
+                } else {
+                p.total -= v[type];
+                p.average = p.total/p.count;
+                }
+                return p;
+            },
+            
+            // reduce initial
+            function(){
+                return {count:0, total:0, average:0};
             }
-            return p;
-        },
-        
-        // reduce initial
-        function(){
-            return {count:0, total:0, average:0};
-        }
-    );
+            
+        );
+    
 
-
-    dc.numberDisplay("#detached-number")
-        .formatNumber(d3.format("$,.0f"))
+    dc.numberDisplay(element)
+        .formatNumber(uk.numberFormat("$,.0f"))
         .valueAccessor(function (d) {
             if (d.count == 0) {
                 return 0;
@@ -120,12 +142,13 @@ function avgPricePerTypeNumber(HPIdata){
                 return (d.average);
             }
         })
-        .group(avgTypePrice);
+        .group(avgPriceGroup);
 }
 
-function lineChart(HPIdata){
 
-    var dateDim = HPIdata.dimension(function(d){ return d.Date});
+function lineChart(HPIdata) {
+
+    var dateDim = HPIdata.dimension(function(d){ return d.Date;});
 
     var OldSalesGroup = dateDim.group().reduce(
         
@@ -223,22 +246,22 @@ function lineChart(HPIdata){
         // .interpolate("basis")
 }
 
-// function pieChart(HPIdata){
+function pieChart(HPIdata){
     
-//     var SaleTypeDim = HPIdata.dimension(function(d){  return d.Date.getFullYear();});
+    var SalesVolumeDim = HPIdata.dimension(function(d){ return d.SalesVolume;});
     
-//     var Volumegroup = SalesVolumedim.group().reduceCount(function(d){ return  d.NewSalesVolume;});
+    var Volumegroup = SalesVolumeDim.group().reduceSum(function(d){ return d.NewSalesVolume;});
     
-//     dc.pieChart("#pie-chart")
-//         .height(400)
-//         .radius(150)
-//         .dimension(SalesVolumedim)
-//         .group(Volumegroup);
+    dc.pieChart("#pie-chart")
+        .height(400)
+        .radius(150)
+        .dimension(SalesVolumeDim)
+        .group(Volumegroup);
 
-// }
+}
 
 
-function OldVsNEwSales (HPIdata){
+function OldVsNEwSalesStacked (HPIdata){
     
     var dateDim = HPIdata.dimension(function(d){ return d.Date;});
     
@@ -247,7 +270,7 @@ function OldVsNEwSales (HPIdata){
     
     var minDate = dateDim.bottom(1)[0].Date;
     var maxDate = dateDim.top(1)[0].Date;
-    
+
     var StackedChart = dc.barChart("#bar-chart")
     
     StackedChart
@@ -258,7 +281,7 @@ function OldVsNEwSales (HPIdata){
         .group(oldSales, "Old Sales")
         .stack(newSales, "New Sales")
         .x(d3.time.scale().domain([minDate, maxDate]))
-        .legend(dc.legend().x(60).y(20).itemHeight(13).gap(5))
+        .legend(dc.legend().x(60).y(20).itemHeight(13).gap(5));
         
 }
 
@@ -340,4 +363,4 @@ function allRowChart(HPIdata){
         .elasticX(true)
         .gap([2]);
         
-};
+}
