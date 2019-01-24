@@ -63,7 +63,36 @@ function choroMap(HPIdata, geoData){
     
     
     var regionDim = HPIdata.dimension(function(d){ return d.RegionName;});
-    var avgPrice = regionDim.group().reduceSum(function(d){ return Math.round(d.AveragePrice / 12);});
+    var avgPrice = regionDim.group().reduce(  
+        
+        // reduce add
+        function(p, v){
+            p.count++;
+            p.total += v.AveragePrice;
+            p.average = p.total/p.count;
+            return p;
+        },
+       
+        
+        //  reduce remove
+        function(p, v){
+            p.count--;
+            if (p.count==0){
+            p.total=0;
+            p.average=0;
+            } else {
+            p.total -= v.AveragePrice;
+            p.average = p.total/p.count;
+            }
+            return p;
+        },
+        
+        // reduce initial
+        function(){
+            return {count:0, total:0, average:0};
+        }
+    );    
+    console.log(avgPrice.all());
     
     var centre = d3.geo.centroid(geoData);
     var projection = d3.geo.mercator().center(centre).scale(35000).translate([250,200]);
@@ -75,6 +104,7 @@ function choroMap(HPIdata, geoData){
         .height(400)
         .dimension(regionDim)
         .group(avgPrice)
+        .valueAccessor(function(d){return Math.round(d.value.average);})
         .title(function(d){
             return d.key + ': £' + d.value;})
         .projection(projection)
@@ -101,7 +131,7 @@ function NumberDisplayPerType(HPIdata, type, element){
         "shortMonths": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     });
     
-
+    
     var avgPriceGroup = HPIdata.groupAll().reduce(
     
              // reduce add
@@ -166,7 +196,7 @@ function lineChart(HPIdata) {
             p.count--;
             if (p.count==0){
             p.total=0;
-            p.avergage=0;
+            p.average=0;
             } else {
             p.total -= v.OldPrice;
             p.average = p.total/p.count;
@@ -198,7 +228,7 @@ function lineChart(HPIdata) {
             p.count--;
             if (p.count==0){
             p.total=0;
-            p.avergage=0;
+            p.average=0;
             } else {
             p.total -= v.NewPrice;
             p.average = p.total/p.count;
@@ -335,7 +365,7 @@ function allRowChart(HPIdata){
             p.count--;
             if (p.count==0){
             p.total=0;
-            p.avergage=0;
+            p.average=0;
             } else {
             p.total -= v.AveragePrice;
             p.average = p.total/p.count;
